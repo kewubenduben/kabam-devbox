@@ -32,3 +32,17 @@ vagrant up
 ```bash
 vagrant ssh
 ```
+
+
+---
+
+### Additional notes
+
+```
+This also removes the need to have puppet master access-grant
+a bit of todo will be
+1. initial mongodb db load[dump, restore]
+2. npm runs
+3. Add more docs on how to develop
+4. Simplify
+```

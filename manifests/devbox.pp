@@ -62,3 +62,14 @@ nodejs_module{'yo': module => 'yo',require => [Class['nodejs']],}
 nodejs_module{'bower': module => 'bower@1.3.2',require => [Class['nodejs']],}
 
 include ejabberd
+
+include firewall
+firewall {'000 elasticsearch on port 9200':
+    dport => 9200
+}
+firewall {'001 kabam-app on port 4000':
+    dport => 4000
+}
+firewall {'001 redis on port 6279':
+    dport => 6279
+}
