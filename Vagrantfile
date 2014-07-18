@@ -16,7 +16,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "puppet" do |puppet|
     puppet.options        = "--verbose --debug"
     puppet.module_path    = "kabam-puppet/modules"
-    puppet.manifests_path = "kabam-puppet/manifests"
+    puppet.manifests_path = "manifests"
     puppet.manifest_file  = "devbox.pp"
   end
 
