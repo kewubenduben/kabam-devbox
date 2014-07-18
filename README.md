@@ -6,7 +6,7 @@ Currently we use Puppetlabs Puppet for our orchestration.
 
 ## Install pre-requisites
 
-* [vagrant](http://www.vagrantup.com/) v1.6.3
+* [vagrant](http://www.vagrantup.com/) v1.6.3; _Create and configure lightweight, reproducible, and portable development environments._
 * [virtualbox](https://www.virtualbox.org/) v4.3.14
 
 ## Download kabam-puppet modules
