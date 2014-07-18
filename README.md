@@ -26,3 +26,9 @@ git clone git@github.com:mykabam/showdme.git
 ```bash
 vagrant up
 ```
+
+## To be able to ssh to the box
+
+```bash
+vagrant ssh
+```
