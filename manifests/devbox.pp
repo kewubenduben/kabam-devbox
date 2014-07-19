@@ -43,9 +43,9 @@ elasticsearch_plugin{'elasticsearch-head':
 }
 
 exec { "es_registration":
-  command   => "curl -XPUT http://localhost:9200/_river",
+  command  => "curl -XPUT http://localhost:9200/_river",
   logoutput => true,
-  timeout     => 1800,
+  timeout => 1800,
   require => [Elasticsearch['main_es'], Elasticsearch_plugin['elasticsearch-river-mongodb']],
 }
 
@@ -66,51 +66,139 @@ include ejabberd
 class { 'ssh::server':
   storeconfigs_enabled => false,
   options => {
-    'AllowTcpForwarding' => 'yes',
+    'AllowTcpForwarding'     => 'yes',
     'PasswordAuthentication' => 'no',
     'PermitRootLogin'        => 'no',
     'Port'                   => [22, 22202],
   },
 }
 
-resources { "firewall":
-  purge => true
-}
+
+########################### FIREWALL ###########################
 include firewall
-firewall { '001 accept all':
-  proto => 'all',
-  action => 'accept'
+Firewall {
+    notify  => Exec["persist-firewall"],
+    require => Exec["purge default firewall"],
 }
-firewall { '002 accept related established rules':
-  proto => 'all',
+$ipv4_file = $operatingsystem ? {
+  /(debian|Ubuntu)/  => '/etc/iptables/rules.v4',
+  /(RedHat|CentOS)/ => '/etc/sysconfig/iptables',
+}
+
+exec { "purge default firewall":
+  command => "/sbin/iptables -F && /sbin/iptables-save > $ipv4_file && /sbin/service iptables restart",
+  onlyif  => "/usr/bin/test `/bin/grep \"Firewall configuration written by\" $ipv4_file | /usr/bin/wc -l` -gt 0",
+  user    => 'root',
+}
+
+/* Make the firewall persistent */
+exec { "persist-firewall":
+  command     => "/bin/echo \"# This file is managed by puppet. Do not modify manually.\" > $ipv4_file && /sbin/iptables-save >> $ipv4_file", 
+  refreshonly => true,
+  user        => 'root',
+}
+
+/* purge anything not managed by puppet */
+resources { 'firewall':
+  purge => true,
+}
+
+# firewall { "001 accept all icmp requests":
+#   proto => 'icmp',
+#   jump  => 'accept',
+# }
+
+firewall { '001 INPUT allow loopback':
+  iniface => 'lo',
+  chain  => 'INPUT',
+  action   => 'accept',
+}
+
+firewall { '001 OUTPUT allow loopback':
+  outiface => 'lo',
+  chain  => 'OUTPUT',
+  action   => 'accept',
+}
+
+firewall { '003 INPUT allow related and established':
+  chain => 'INPUT',
   state => ['RELATED', 'ESTABLISHED'],
+  action  => 'accept',
+  proto => 'all'
+}
+
+firewall { '003 OUTPUT allow related and established':
+  chain => 'OUTPUT',
+  state => ['RELATED', 'ESTABLISHED'],
+  action  => 'accept',
+  proto => 'all',
 }
 
 firewall {'011 ssh for local_network_1':
   source => '10.0.0.0/8',
-  proto   => 'all',
+  proto  => 'all',
   action  => 'accept'
 }
+
 firewall {'011 ssh for local_network_2':
   source => '192.168.0.0/16',
-  proto   => 'all',
+  proto  => 'all',
   action => 'accept'
 }
 
-firewall { '999 drop all':
-  proto   => 'all',
-  action  => 'drop',
-  before  => undef,
-}
-firewall {'998 INPUT Log': 
+firewall {'996 INPUT Log': 
   chain => 'INPUT',
   log_level => 4,
   log_prefix => 'DROP_AFW_INPUT',
   jump => 'LOG'
 }
-firewall {'998 OUTPUT Log': 
+
+firewall {'997 OUTPUT Log': 
   chain => 'OUTPUT',
   log_level => 4,
   log_prefix => 'DROP_AFW_INPUT',
   jump => 'LOG'
 }
+
+firewall { "998 deny all other requests":
+  action  => 'drop',
+  proto  => 'all',
+}
+
+firewall { "999 deny all other requests":
+  chain  => 'FORWARD',
+  action  => 'drop',
+  proto  => 'all',
+}
+
+firewallchain { 'root:filter:IPv4':
+  ensure  => present,
+}
+
+firewall {'1100 root user':  
+  chain => 'OUTPUT',
+  state => ['NEW'],
+  uid => '0',
+  jump => 'root'
+}
+
+###### MONGO ######
+firewall {'100 mongodb for local_network_2':
+  source => '192.168.0.0/16',
+  dport => '27017',
+  proto => 'tcp',
+  action => 'accept',
+}
+
+firewallchain { 'mongodb:filter:IPv4':
+  ensure  => present,
+}
+
+firewall {'1100 mongodb user':  
+  chain => 'OUTPUT',
+  state => ['NEW'],
+  uid => '106',
+  jump => 'mongodb'
+}
+###### MONGO ######
+########################### FIREWALL ###########################
