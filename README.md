@@ -12,7 +12,7 @@ Currently we use Puppetlabs Puppet for our orchestration.
 ## Download kabam-puppet modules
 
 ```bash
-git clone git@github.com:mykabam/kabam-puppet.git
+git clone git@github.com:kewubenduben/kabam-puppet.git
 ```
 
 ## Download showdme source
