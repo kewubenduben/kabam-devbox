@@ -72,3 +72,45 @@ class { 'ssh::server':
     'Port'                   => [22, 22202],
   },
 }
+
+resources { "firewall":
+  purge => true
+}
+include firewall
+firewall { '001 accept all':
+  proto => 'all',
+  action => 'accept'
+}
+firewall { '002 accept related established rules':
+  proto => 'all',
+  state => ['RELATED', 'ESTABLISHED'],
+}
+
+firewall {'011 ssh for local_network_1':
+  source => '10.0.0.0/8',
+  proto   => 'all',
+  action  => 'accept'
+}
+firewall {'011 ssh for local_network_2':
+  source => '192.168.0.0/16',
+  proto   => 'all',
+  action => 'accept'
+}
+
+firewall { '999 drop all':
+  proto   => 'all',
+  action  => 'drop',
+  before  => undef,
+}
+firewall {'998 INPUT Log': 
+  chain => 'INPUT',
+  log_level => 4,
+  log_prefix => 'DROP_AFW_INPUT',
+  jump => 'LOG'
+}
+firewall {'998 OUTPUT Log': 
+  chain => 'OUTPUT',
+  log_level => 4,
+  log_prefix => 'DROP_AFW_INPUT',
+  jump => 'LOG'
+}
